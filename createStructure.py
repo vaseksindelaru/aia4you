@@ -26,12 +26,12 @@ def create_project_structure():
     for root, files in structure.items():
         for file in files:
             file_path = os.path.join(root, file)
-            if file.endswith("/"):
+            if file.endswith("/models/template/models/template"):
                 os.makedirs(file_path, exist_ok=True)
             else:
                 os.makedirs(os.path.dirname(file_path), exist_ok=True)
                 with open(file_path, "w") as f:
-                    f.write("# " + file.split("/")[-1])
+                    f.write("# " + file.split("/models/template/models/template")[-1])
     
     print("Estructura del proyecto creada con éxito.")
 
