@@ -24,13 +24,11 @@ DB_CONFIG = {
     "database": os.getenv("MYSQL_DATABASE", "sql1")
 }
 
-# Ruta raíz para verificar que el servidor está funcionando
 @app.get("/")
-async def root():
-    return {"status": "ok", "message": "Server is running"}
+def read_root():
+    return {"message": "API is running"}
 
-# Endpoint para recibir el prompt
-@app.post("/help_connect")
+@app.post("/help_connect/")
 async def process_prompt(payload: Prompt):
     try:
         # Conectar a la base de datos y obtener datos
@@ -118,36 +116,69 @@ correlación: valores ajustables
 """
 
         # Enviar a la API de Hugging Face
-        xai_api_url = "https://api-inference.huggingface.co/models/tiiuae/falcon-7b-instruct"
+        xai_api_url = "https://api-inference.huggingface.co/models/gpt2-large"  
         headers = {"Authorization": f"Bearer {os.getenv('HUGGINGFACE_API_KEY')}"}
         
-        response = requests.post(xai_api_url, headers=headers, json={
-            "inputs": combined_text,
-            "parameters": {
-                "max_length": 1000,
-                "temperature": 0.7,
-                "top_p": 0.95,
-                "do_sample": True
-            }
-        })
-        
-        if response.status_code == 200:
-            response_data = response.json()
-            if isinstance(response_data, list) and len(response_data) > 0:
-                generated_text = response_data[0].get('generated_text', '')
-                return {"status": "success", "response": generated_text}
+        try:
+            # Primer intento con gpt2-large
+            response = requests.post(xai_api_url, headers=headers, json={
+                "inputs": combined_text,
+                "parameters": {
+                    "max_length": 1000,
+                    "temperature": 0.7,
+                    "top_p": 0.95,
+                    "do_sample": True,
+                    "return_full_text": False
+                }
+            }, timeout=60)
+            
+            if response.status_code == 200:
+                response_data = response.json()
+                if isinstance(response_data, list) and len(response_data) > 0:
+                    generated_text = response_data[0].get('generated_text', '')
+                    return {"status": "success", "response": generated_text}
+                else:
+                    print(f"Respuesta inesperada: {response_data}")
+                    raise HTTPException(status_code=500, detail="Formato de respuesta inválido")
             else:
-                print(f"Respuesta inesperada: {response_data}")
-                raise HTTPException(status_code=500, detail="Formato de respuesta inválido")
-        else:
-            print(f"Error en la API: Status {response.status_code}, Response: {response.text}")
-            raise HTTPException(
-                status_code=response.status_code,
-                detail=f"Error en la API: {response.text}"
-            )
+                # Si falla, intentar con un modelo más pequeño
+                xai_api_url_backup = "https://api-inference.huggingface.co/models/gpt2"
+                response = requests.post(xai_api_url_backup, headers=headers, json={
+                    "inputs": combined_text,
+                    "parameters": {
+                        "max_length": 1000,
+                        "temperature": 0.7,
+                        "top_p": 0.95,
+                        "do_sample": True,
+                        "return_full_text": False
+                    }
+                }, timeout=60)
+                
+                if response.status_code == 200:
+                    response_data = response.json()
+                    if isinstance(response_data, list) and len(response_data) > 0:
+                        generated_text = response_data[0].get('generated_text', '')
+                        return {"status": "success", "response": generated_text}
+                
+                error_msg = f"Error en la API de Hugging Face (Status {response.status_code})"
+                if response.text:
+                    try:
+                        error_detail = response.json()
+                        error_msg += f": {error_detail.get('error', response.text)}"
+                    except:
+                        error_msg += f": {response.text}"
+                print(error_msg)
+                raise HTTPException(status_code=500, detail=error_msg)
+                
+        except requests.Timeout:
+            error_msg = "La API está tardando demasiado en responder. Por favor, inténtalo de nuevo en unos momentos."
+            print(error_msg)
+            raise HTTPException(status_code=503, detail=error_msg)
+        except requests.RequestException as e:
+            error_msg = f"Error de conexión con la API: {str(e)}"
+            print(error_msg)
+            raise HTTPException(status_code=503, detail=error_msg)
             
     except Exception as e:
         print(f"Error general: {str(e)}")
         raise HTTPException(status_code=500, detail=str(e))
-
-help_connect = app
