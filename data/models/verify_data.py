@@ -1,11 +1,16 @@
 import mysql.connector
+import os
+from dotenv import load_dotenv
+
+# Cargar variables de entorno
+load_dotenv()
 
 # Configuración de la conexión
 config = {
-    "host": 'localhost',
-    "user": 'root',
-    "password": '21blackjack',
-    "database": 'sql1'
+    "host": os.getenv("MYSQL_HOST", "localhost"),
+    "user": os.getenv("MYSQL_USER", "root"),
+    "password": os.getenv("MYSQL_PASSWORD"),
+    "database": os.getenv("MYSQL_DATABASE", "sql1")
 }
 
 try:
