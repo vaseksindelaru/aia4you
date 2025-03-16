@@ -2,25 +2,35 @@ from fastapi import FastAPI, HTTPException
 from pydantic import BaseModel
 import mysql.connector
 import requests
-import yaml
-import json
 import os
 from dotenv import load_dotenv
+from fastapi.middleware.cors import CORSMiddleware
+import yaml
 
 # Cargar variables de entorno
 load_dotenv()
 
+# Configuración básica de FastAPI
 app = FastAPI()
 
-# Modelo Pydantic para validar el payload
+# Habilitar CORS
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
+
+# Modelo para el prompt
 class Prompt(BaseModel):
     prompt: str
 
 # Configuración de la base de datos MySQL desde variables de entorno
-DB_CONFIG = {
+db_config = {
     "host": os.getenv("MYSQL_HOST", "localhost"),
     "user": os.getenv("MYSQL_USER", "root"),
-    "password": os.getenv("MYSQL_PASSWORD"),
+    "password": os.getenv("MYSQL_PASSWORD", "21blackjack"),
     "database": os.getenv("MYSQL_DATABASE", "sql1")
 }
 
@@ -28,157 +38,152 @@ DB_CONFIG = {
 def read_root():
     return {"message": "API is running"}
 
-@app.post("/help_connect/")
+@app.post("/help_connect")
 async def process_prompt(payload: Prompt):
     try:
-        # Conectar a la base de datos y obtener datos
+        print("\n" + "="*50)
+        print("INICIANDO PROCESO DE PROMPT")
+        print("="*50)
+        print(f"Prompt recibido: {payload.prompt}")
+        
+        # Obtener indicadores de la base de datos
         indicators = []
         try:
-            conn = mysql.connector.connect(**DB_CONFIG)
-            cursor = conn.cursor(dictionary=True)
-            cursor.execute("SELECT config_yaml FROM apis_db WHERE name = 'MomentumTrading' LIMIT 1")
-            result = cursor.fetchone()
+            connection = mysql.connector.connect(**db_config)
+            cursor = connection.cursor(dictionary=True)
+            cursor.execute("SELECT config_yaml FROM apis_db WHERE config_yaml IS NOT NULL")
+            results = cursor.fetchall()
             
-            if result:
-                config_yaml = result['config_yaml']
-                config = yaml.safe_load(config_yaml)
-                indicators = config.get("indicators", [])
-                print(f"Indicadores cargados: {indicators}")
-            else:
-                print("No se encontraron datos en la base de datos")
-                
-        except Exception as db_error:
-            print(f"Error de base de datos: {str(db_error)}")
-            raise HTTPException(status_code=500, detail=f"Error de base de datos: {str(db_error)}")
+            # Procesar cada configuración YAML para extraer indicadores
+            for row in results:
+                if row['config_yaml']:
+                    try:
+                        config = yaml.safe_load(row['config_yaml'])
+                        if config and 'indicators' in config:
+                            # Asegurarse de que los indicadores son una lista
+                            if isinstance(config['indicators'], list):
+                                indicators.extend(config['indicators'])
+                            elif isinstance(config['indicators'], str):
+                                indicators.append(config['indicators'])
+                    except yaml.YAMLError as e:
+                        print(f"Error al parsear YAML: {e}")
+                        continue
+            
+            # Eliminar duplicados y None
+            indicators = list(set(filter(None, indicators)))
+            print("\nIndicadores disponibles:", indicators)
+            
+        except Exception as e:
+            print(f"Error al conectar a la base de datos: {e}")
+            return {"status": "error", "response": f"Error al conectar a la base de datos: {str(e)}"}
         finally:
-            if 'conn' in locals() and conn.is_connected():
+            if 'connection' in locals() and connection.is_connected():
                 cursor.close()
-                conn.close()
+                connection.close()
 
         # Construir el texto combinado
+        print("\nConstruyendo prompt para la API...")
         combined_text = f"""
-Genere consulta con expertos para diferentes casos de tareas.
-Responda el prompt inicial según tarea correspondiente (A o B).
+Actúa como un experto en trading que recomienda indicadores técnicos. Analiza el prompt y genera un YAML con indicadores e inputs recomendados.
 
-# Prompt recibido desde streamlitApp/user.py
+# Ejemplo de análisis (Chain of Thought + One-Shot):
+Prompt de ejemplo: "Quiero una estrategia que detecte cambios de tendencia usando el precio y volumen"
+
+Pensamiento paso a paso:
+1. Para detectar cambios de tendencia necesitamos:
+   - Indicadores de tendencia (ej: Moving Averages)
+   - Indicadores de momentum (ej: RSI)
+   - Confirmación por volumen
+
+2. Comparando con indicadores disponibles:
+   Disponibles: {indicators}
+   Necesarios pero no disponibles: ninguno
+
+3. Generando YAML:
+indicators:
+  - ma     # Para identificar la tendencia
+  - rsi    # Para confirmar cambios
+  - volume # Para validar la fuerza del movimiento
+inputs:
+  - price_close  # Para MA y RSI
+  - volume_data  # Para análisis de volumen
+
+# Tu tarea:
+Analiza este prompt y genera un YAML similar:
 {payload.prompt}
 
-tarea:
-caso A: 
-tarea: crea nueva estrategia
-consulta:
-exp. 1: Identifica la lógica principal de la estrategia y sugiere indicadores 
-exp. 2: Busca entre estos indicadores:
-
-# Indicadores recibidos desde apisDb
+# Indicadores disponibles en la base de datos:
 {', '.join(indicators)}
 
-a los indicadores sugeridos. 
-En caso de:
-1/ encontrarlos todos:
-continúe con otros expertos, 
-2/ no encontrar indicador recomendado:
-crea tarea para crear nueva api del indicador con el nombre del indicador y la descripción del indicador. 
-ejemplo:
- 
-tarea: 
-crea nueva api del indicador Momentum, 
-descripción: 
-indica fuerza de la tendencia
+Genera SOLO el archivo YAML con indicators e inputs, siguiendo el ejemplo anterior."""
 
-continue en tarea caso B.
-
-3/ encontrar uno o algunos de los indicadores sugeridos
-a/ para indicadores no encontrados:
-crea diferentes tareas, igual que en el caso 2.
-b/ para indicadores encontrados:
-continúe con expertos, igual que en el caso 1.
-
-exp.3: Define ajustes óptimos para señales basados en indicadores y en lógica de la estrategia
-exp.4: Busca correlaciones con estrategias existentes, para evitar redundancias o encontrar sinergias
-exp.5: Crea un archivo de configuración YAML con:
-name: Nombre de la estrategia
-indicators: Indicadores necesarios
-inputs: Datos requeridos para identificar las señales
-conditions: Ajuste óptimo de indicadores, datos y otras herramientas para detectar señales.
-correlations: Valores ajustables
-
-caso B: crear nueva api del indicador:
-exp.1: Analiza la lógica de la estrategia, confirma correlación con indicador sugerido.
-exp.2: Define ajustes de indicador para detectar señales basados en la estrategia
-exp.3: Busca correlaciones con indicadores existentes, para evitar redundancias o encontrar sinergias
-exp.4: Crea un archivo de configuración YAML con:
-name: Nombre de la api
-indicator: Indicadores utilizados
-inputs: Datos requeridos para identificar las señales
-conditions: Ajuste óptimo de indicadores, datos y otras herramientas para detectar señales
-correlación: valores ajustables
-"""
-
-        # Enviar a la API de Hugging Face
-        xai_api_url = "https://api-inference.huggingface.co/models/gpt2-large"  
-        headers = {"Authorization": f"Bearer {os.getenv('HUGGINGFACE_API_KEY')}"}
+        print("\nEnviando solicitud a la API de Hugging Face...")
+        print("-"*50)
+        print("PROMPT ENVIADO:")
+        print(combined_text)
+        print("-"*50)
         
         try:
-            # Primer intento con gpt2-large
-            response = requests.post(xai_api_url, headers=headers, json={
-                "inputs": combined_text,
-                "parameters": {
-                    "max_length": 1000,
-                    "temperature": 0.7,
-                    "top_p": 0.95,
-                    "do_sample": True,
-                    "return_full_text": False
-                }
-            }, timeout=60)
+            api_key = os.getenv('HUGGINGFACE_API_KEY')
+            if not api_key:
+                error_msg = "API key no encontrada"
+                print(f"Error: {error_msg}")
+                return {"status": "error", "response": error_msg}
+                
+            response = requests.post(
+                "https://api-inference.huggingface.co/models/mistralai/Mistral-7B-Instruct-v0.2",
+                headers={"Authorization": f"Bearer {api_key}"},
+                json={
+                    "inputs": combined_text,
+                    "parameters": {
+                        "max_new_tokens": 500,
+                        "temperature": 0.7,
+                        "top_p": 0.95,
+                        "return_full_text": False
+                    }
+                },
+                timeout=180
+            )
             
+            print("\nRespuesta recibida!")
+            print(f"Status Code: {response.status_code}")
+            print(f"Headers: {dict(response.headers)}")
+            print(f"Contenido: {response.text}")
+            
+            if response.status_code == 503:
+                error_msg = "El servicio de Hugging Face está temporalmente no disponible. Por favor, intenta de nuevo en unos minutos."
+                print(f"Error: {error_msg}")
+                return {"status": "error", "response": error_msg}
+                
             if response.status_code == 200:
                 response_data = response.json()
                 if isinstance(response_data, list) and len(response_data) > 0:
                     generated_text = response_data[0].get('generated_text', '')
+                    print("\n" + "="*50)
+                    print("RESPUESTA FINAL:")
+                    print("="*50)
+                    print(generated_text)
+                    print("="*50 + "\n")
                     return {"status": "success", "response": generated_text}
                 else:
-                    print(f"Respuesta inesperada: {response_data}")
-                    raise HTTPException(status_code=500, detail="Formato de respuesta inválido")
+                    error_msg = "Formato de respuesta inesperado"
+                    print(f"Error: {error_msg}")
+                    return {"status": "error", "response": error_msg}
             else:
-                # Si falla, intentar con un modelo más pequeño
-                xai_api_url_backup = "https://api-inference.huggingface.co/models/gpt2"
-                response = requests.post(xai_api_url_backup, headers=headers, json={
-                    "inputs": combined_text,
-                    "parameters": {
-                        "max_length": 1000,
-                        "temperature": 0.7,
-                        "top_p": 0.95,
-                        "do_sample": True,
-                        "return_full_text": False
-                    }
-                }, timeout=60)
+                error_msg = f"Error en la API (Status {response.status_code}): {response.text}"
+                print(f"Error: {error_msg}")
+                return {"status": "error", "response": error_msg}
                 
-                if response.status_code == 200:
-                    response_data = response.json()
-                    if isinstance(response_data, list) and len(response_data) > 0:
-                        generated_text = response_data[0].get('generated_text', '')
-                        return {"status": "success", "response": generated_text}
-                
-                error_msg = f"Error en la API de Hugging Face (Status {response.status_code})"
-                if response.text:
-                    try:
-                        error_detail = response.json()
-                        error_msg += f": {error_detail.get('error', response.text)}"
-                    except:
-                        error_msg += f": {response.text}"
-                print(error_msg)
-                raise HTTPException(status_code=500, detail=error_msg)
-                
-        except requests.Timeout:
-            error_msg = "La API está tardando demasiado en responder. Por favor, inténtalo de nuevo en unos momentos."
-            print(error_msg)
-            raise HTTPException(status_code=503, detail=error_msg)
-        except requests.RequestException as e:
-            error_msg = f"Error de conexión con la API: {str(e)}"
-            print(error_msg)
-            raise HTTPException(status_code=503, detail=error_msg)
+        except requests.exceptions.Timeout:
+            error_msg = "Timeout en la API"
+            print(f"Error: {error_msg}")
+            return {"status": "error", "response": error_msg}
+        except Exception as e:
+            error_msg = f"Error al procesar la respuesta: {str(e)}"
+            print(f"Error: {error_msg}")
+            return {"status": "error", "response": error_msg}
             
     except Exception as e:
-        print(f"Error general: {str(e)}")
-        raise HTTPException(status_code=500, detail=str(e))
+        error_msg = f"Error general: {str(e)}"
+        print(f"Error: {error_msg}")
+        return {"status": "error", "response": error_msg}
