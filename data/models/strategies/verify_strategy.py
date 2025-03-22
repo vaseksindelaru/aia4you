@@ -19,7 +19,7 @@ try:
     cursor = conn.cursor(dictionary=True)
     
     # Consultar el registro
-    query = "SELECT * FROM apis_db WHERE uuid = '550e8400-e29b-41d4-a716-446655440000'"
+    query = "SELECT * FROM strategies WHERE uuid = '550e8400-e29b-41d4-a716-446655440000'"
     cursor.execute(query)
     result = cursor.fetchone()
     
