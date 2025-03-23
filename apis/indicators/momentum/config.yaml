@@ -1,0 +1,18 @@
+name: momentumIndicator
+indicator: momentum
+inputs:
+  - price_data: "Serie temporal de precios (cierre)"
+conditions:
+  period: 14
+  signal: "MOM > 0 (alcista), MOM < 0 (bajista)"
+
+implementation:
+  formula: "MOM = close[t] - close[t - period]"
+  parameters:
+    period: 14
+  signals:
+    buy: "MOM > 0"
+    sell: "MOM < 0"
+  dependencies:
+    - "numpy: para cálculos matemáticos"
+    - "pandas: para manejo de series temporales"

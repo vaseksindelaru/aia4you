@@ -9,6 +9,7 @@ import logging
 from dotenv import load_dotenv
 import json
 import requests
+import sys
 
 # Configuración de logging
 logging.basicConfig(
@@ -42,6 +43,10 @@ app.add_middleware(
     allow_methods=["*"],  # Permitir todos los métodos
     allow_headers=["*"],  # Permitir todos los headers
 )
+
+# Añadir el directorio raíz al path para poder importar módulos personalizados
+sys.path.append(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))))
+from actions.check.fuzzy_check import fuzzy_match, get_similarity_ratio
 
 def generate_strategy_yaml(prompt: str) -> dict:
     """
@@ -422,6 +427,178 @@ def save_strategy_to_db(strategy_data: dict) -> bool:
             cursor.close()
             connection.close()
 
+def request_indicator_generation(indicator_name):
+    """
+    Solicita la generación de un nuevo indicador al servicio de generación de indicadores.
+    
+    Args:
+        indicator_name (str): Nombre del indicador a generar
+        
+    Returns:
+        bool: True si se generó correctamente, False en caso contrario
+    """
+    try:
+        # URL del servicio de generación de indicadores
+        indicator_service_url = "http://localhost:8506/generate_indicator/"
+        
+        # Preparar el prompt para la generación del indicador
+        prompt = f"Crear indicador de trading {indicator_name}"
+        
+        # Enviar solicitud al servicio de generación de indicadores
+        logger.info(f"SOLICITANDO GENERACIÓN DEL INDICADOR: {indicator_name}")
+        response = requests.post(
+            indicator_service_url,
+            json={"prompt": prompt}
+        )
+        
+        if response.status_code == 200:
+            response_data = response.json()
+            if response_data.get("status") == "success":
+                logger.info(f"INDICADOR GENERADO EXITOSAMENTE: {indicator_name}")
+                
+                # Verificar que todos los datos necesarios estén presentes
+                indicator_data = response_data.get("indicator_data", {})
+                if not all(key in indicator_data for key in ["name", "description", "config_yaml", "implementation_yaml"]):
+                    logger.error(f"DATOS DE INDICADOR INCOMPLETOS: {indicator_data}")
+                    return False
+                
+                # Guardar el indicador generado
+                save_url = "http://localhost:8506/save_indicator/"
+                logger.info(f"GUARDANDO INDICADOR: {indicator_name}")
+                logger.debug(f"DATOS DEL INDICADOR: {indicator_data}")
+                
+                save_response = requests.post(
+                    save_url,
+                    json={"indicator_data": indicator_data}
+                )
+                
+                if save_response.status_code == 200:
+                    save_result = save_response.json()
+                    if save_result.get("status") == "success":
+                        logger.info(f"INDICADOR GUARDADO EXITOSAMENTE: {indicator_name}")
+                        logger.info(f"INDICADOR GENERADO Y GUARDADO: {indicator_name}")
+                        return True
+                    else:
+                        logger.error(f"ERROR AL GUARDAR INDICADOR: {save_result.get('message', 'Error desconocido')}")
+                else:
+                    logger.error(f"ERROR AL GUARDAR INDICADOR: {save_response.text}")
+            else:
+                logger.error(f"ERROR EN LA RESPUESTA DEL SERVICIO DE INDICADORES: {response_data}")
+        else:
+            logger.error(f"ERROR AL SOLICITAR GENERACIÓN DE INDICADOR: {response.text}")
+        
+        return False
+    except Exception as e:
+        logger.error(f"ERROR AL SOLICITAR GENERACIÓN DE INDICADOR: {str(e)}")
+        return False
+
+def check_indicator_exists(indicator_name, threshold=0.85):
+    """
+    Verifica si un indicador con nombre similar ya existe en la base de datos
+    usando fuzzy matching.
+    
+    Args:
+        indicator_name (str): Nombre del indicador a verificar
+        threshold (float): Umbral de similitud (0-1)
+        
+    Returns:
+        tuple: (bool, dict) - (existe, datos_del_indicador_si_existe)
+    """
+    try:
+        # Conectar a la base de datos
+        connection = mysql.connector.connect(
+            host=os.getenv("MYSQL_HOST", "localhost"),
+            user=os.getenv("MYSQL_USER", "root"),
+            password=os.getenv("MYSQL_PASSWORD", ""),
+            database=os.getenv("MYSQL_DATABASE", "sql1")
+        )
+        
+        cursor = connection.cursor(dictionary=True)
+        
+        # Obtener todos los indicadores
+        query = "SELECT * FROM indicators"
+        cursor.execute(query)
+        indicators = cursor.fetchall()
+        
+        # Verificar similitud con cada indicador usando fuzzy_check
+        for indicator in indicators:
+            # Usar fuzzy_match de fuzzy_check.py para verificar similitud
+            if fuzzy_match(indicator_name, indicator['name'], threshold):
+                similarity = get_similarity_ratio(indicator_name, indicator['name'])
+                logger.info(f"INDICADOR SIMILAR ENCONTRADO: {indicator['name']} (Similitud: {similarity:.2f})")
+                return True, indicator
+        
+        logger.info(f"NO SE ENCONTRÓ INDICADOR SIMILAR A: {indicator_name}")
+        return False, None
+    
+    except Exception as e:
+        logger.error(f"ERROR AL VERIFICAR INDICADOR: {e}")
+        return False, None
+    
+    finally:
+        if 'connection' in locals() and connection.is_connected():
+            cursor.close()
+            connection.close()
+
+def extract_indicators_from_yaml(yaml_content):
+    """
+    Extrae los nombres de los indicadores mencionados en el YAML de una estrategia.
+    
+    Args:
+        yaml_content (str): Contenido YAML de la estrategia
+        
+    Returns:
+        list: Lista de nombres de indicadores
+    """
+    try:
+        # Cargar el YAML
+        strategy_dict = yaml.safe_load(yaml_content)
+        
+        # Extraer indicadores
+        indicators = []
+        if isinstance(strategy_dict, dict) and "indicators" in strategy_dict:
+            indicators = strategy_dict["indicators"]
+        
+        return indicators if isinstance(indicators, list) else []
+    except Exception as e:
+        logger.error(f"ERROR AL EXTRAER INDICADORES DEL YAML: {str(e)}")
+        return []
+
+def verify_and_generate_indicators(strategy_yaml):
+    """
+    Verifica si los indicadores mencionados en la estrategia existen,
+    y si no, solicita su generación.
+    
+    Args:
+        strategy_yaml (str): Contenido YAML de la estrategia
+        
+    Returns:
+        list: Lista de indicadores generados
+    """
+    # Extraer indicadores del YAML
+    indicators = extract_indicators_from_yaml(strategy_yaml)
+    
+    generated_indicators = []
+    
+    # Verificar cada indicador
+    for indicator in indicators:
+        logger.info(f"VERIFICANDO EXISTENCIA DEL INDICADOR: {indicator}")
+        
+        # Verificar si el indicador existe
+        exists, _ = check_indicator_exists(indicator)
+        
+        if not exists:
+            logger.info(f"SOLICITANDO GENERACIÓN DEL INDICADOR: {indicator}")
+            
+            # Solicitar generación del indicador
+            if request_indicator_generation(indicator):
+                generated_indicators.append(indicator)
+                logger.info(f"INDICADOR GENERADO Y GUARDADO: {indicator}")
+            else:
+                logger.error(f"NO SE PUDO GENERAR EL INDICADOR: {indicator}")
+    
+    return generated_indicators
+
 @app.post("/generate_strategy/")
 def generate_strategy(request: StrategyRequest):
     """Endpoint para generar una estrategia"""
@@ -433,12 +610,16 @@ def generate_strategy(request: StrategyRequest):
         # Generar la estrategia
         strategy_data = generate_strategy_yaml(request.prompt)
         
+        # Verificar y generar indicadores necesarios
+        generated_indicators = verify_and_generate_indicators(strategy_data["yaml_content"])
+        
         logger.info("ESTRATEGIA GENERADA CON ÉXITO")
         return {
             "status": "success",
             "strategy_name": strategy_data["name"],
             "strategy_description": strategy_data["description"],
-            "strategy_yaml": strategy_data["yaml_content"]
+            "strategy_yaml": strategy_data["yaml_content"],
+            "generated_indicators": generated_indicators
         }
     except Exception as e:
         logger.error(f"ERROR AL GENERAR ESTRATEGIA: {e}")

@@ -1,3 +1,11 @@
 .env
 __pycache__/
 *.pyc
+
+# Archivos de log
+*_log.txt
+**/log.txt
+indicator_log.txt
+strategy_log.txt
+actions/generate/strategy_log.txt
+actions/generate/indicator_log.txt

@@ -1,0 +1,43 @@
+indicator: RSI
+parameters:
+  period: 14
+  overbought_threshold: 70.0
+  oversold_threshold: 30.0
+inputs:
+  price: close
+conditions:
+  buy: RSI < 30.0
+  sell: RSI > 70.0
+description: Relative Strength Index (RSI) measures the magnitude of recent price changes to evaluate overbought or oversold conditions.
+implementation:
+  name: RSI
+  type: oscillator
+  function: calculate_rsi
+  code: |
+    def calculate_rsi(prices, period=14, overbought=70, oversold=30):
+        # Calcular cambios en los precios
+        delta = prices.diff()
+        
+        # Separar ganancias (positivos) y pérdidas (negativos)
+        gain = delta.where(delta > 0, 0)
+        loss = -delta.where(delta < 0, 0)
+        
+        # Calcular la media móvil exponencial de ganancias y pérdidas
+        avg_gain = gain.rolling(window=period).mean()
+        avg_loss = loss.rolling(window=period).mean()
+        
+        # Calcular la fuerza relativa (RS)
+        rs = avg_gain / avg_loss
+        
+        # Calcular el RSI
+        rsi = 100 - (100 / (1 + rs))
+        
+        # Generar señales
+        signals = pd.Series(0, index=rsi.index)
+        signals[rsi < oversold] = 1  # Señal de compra
+        signals[rsi > overbought] = -1  # Señal de venta
+        
+        return {
+            'rsi': rsi,
+            'signals': signals
+        }
