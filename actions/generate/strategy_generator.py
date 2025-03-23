@@ -3,37 +3,24 @@ from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 import mysql.connector
 import os
-from dotenv import load_dotenv
-import yaml
 import uuid
+import yaml
 import logging
-import re
+from dotenv import load_dotenv
+import json
 
-# Configuración del logger
-log_file = os.path.join(os.path.dirname(os.path.abspath(__file__)), "strategy_log.txt")
+# Configuración de logging
 logging.basicConfig(
     level=logging.INFO,
     format='%(asctime)s - %(message)s',
     handlers=[
-        logging.FileHandler(log_file, mode='a'),
+        logging.FileHandler("strategy_log.txt"),
         logging.StreamHandler()
     ]
 )
 logger = logging.getLogger(__name__)
 
-# Indicadores disponibles (como respaldo)
-AVAILABLE_INDICATORS = {
-    "Moving Average": "MA",
-    "Relative Strength Index": "RSI",
-    "Moving Average Convergence Divergence": "MACD",
-    "Momentum": "MOM",
-    "Bollinger Bands": "BB",
-    "Average Directional Index": "ADX",
-    "Stochastic Oscillator": "STOCH",
-    "Volume": "VOL"
-}
-
-# Modelos para las solicitudes
+# Definición de modelos
 class StrategyRequest(BaseModel):
     prompt: str
 
@@ -55,53 +42,59 @@ app.add_middleware(
     allow_headers=["*"],  # Permitir todos los headers
 )
 
-@app.get("/")
-def root():
-    """Endpoint raíz"""
-    logger.info("="*50)
-    logger.info("ACCESO A RAIZ")
-    logger.info("="*50)
-    return {"message": "API de generación de estrategias"}
+# Prompt para generar estrategias de trading con Chain of Thought y one-shot
+STRATEGY_PROMPT = """
+Genera una estrategia de trading basada en el siguiente prompt: "{prompt}"
 
-@app.get("/test/")
-def test():
-    """Endpoint de prueba"""
-    logger.info("="*50)
-    logger.info("ACCESO A TEST")
-    logger.info("="*50)
-    return {"message": "Test exitoso"}
+Sigue este proceso paso a paso (Chain of Thought):
 
-# Configuración de la base de datos MySQL
-db_config = {
-    "host": os.getenv("MYSQL_HOST", "localhost"),
-    "user": os.getenv("MYSQL_USER", "root"),
-    "password": os.getenv("MYSQL_PASSWORD", "21blackjack"),
-    "database": os.getenv("MYSQL_DATABASE", "sql1")
-}
+1. Analiza el prompt para identificar el tipo de estrategia solicitada.
+2. Determina qué indicadores técnicos serían más adecuados para esta estrategia.
+3. Define las condiciones de entrada y salida para la estrategia.
+4. Establece los parámetros de gestión de riesgo.
+5. Crea un nombre descriptivo y una descripción clara para la estrategia.
 
-def get_available_indicators() -> list:
-    """Obtiene los indicadores disponibles de la base de datos"""
-    logger.info("="*50)
-    logger.info("BUSCANDO INDICADORES")
-    logger.info("="*50)
-    try:
-        connection = mysql.connector.connect(**db_config)
-        cursor = connection.cursor()
-        
-        query = "SELECT name FROM indicators"
-        cursor.execute(query)
-        
-        indicators = [row[0] for row in cursor.fetchall()]
-        logger.info(f"INDICADORES ENCONTRADOS: {indicators}")
-        return indicators
-        
-    except Exception as e:
-        logger.error(f"ERROR EN INDICADORES: {e}")
-        return []
-    finally:
-        if 'connection' in locals() and connection.is_connected():
-            cursor.close()
-            connection.close()
+Ejemplo (one-shot) para una estrategia de Momentum Trading:
+
+Análisis del prompt:
+- Se solicita una estrategia de momentum trading
+- Este tipo de estrategia se basa en la continuación de tendencias
+- Necesitamos indicadores que midan la fuerza de la tendencia
+
+Indicadores seleccionados:
+- RSI (Relative Strength Index): Mide la velocidad y cambio de los movimientos de precio
+- MACD (Moving Average Convergence Divergence): Identifica cambios en la fuerza, dirección y momentum
+- ADX (Average Directional Index): Mide la fuerza de la tendencia
+
+Condiciones de entrada:
+- RSI > 50 y en aumento (para tendencias alcistas)
+- MACD cruza por encima de su línea de señal
+- ADX > 25 (indica tendencia fuerte)
+
+Condiciones de salida:
+- RSI < 50 y en descenso
+- MACD cruza por debajo de su línea de señal
+- Trailing stop del 2%
+
+Gestión de riesgo:
+- Stop loss del 3%
+- Tamaño de posición del 2% del capital
+- Ratio riesgo/recompensa mínimo de 1:2
+
+Nombre: "Triple Momentum Strategy"
+Descripción: "Estrategia de trading basada en la convergencia de tres indicadores de momentum (RSI, MACD y ADX) para identificar tendencias fuertes y sostenibles."
+
+La respuesta debe estar en formato de tabla como se muestra a continuación:
+
+| Campo | Valor |
+|-------|-------|
+| Nombre | Triple Momentum Strategy |
+| Descripción | Estrategia de trading basada en la convergencia de tres indicadores de momentum (RSI, MACD y ADX) para identificar tendencias fuertes y sostenibles. |
+| Indicadores | RSI, MACD, ADX |
+| Condiciones de entrada | RSI > 50 y en aumento, MACD cruza por encima de su línea de señal, ADX > 25 |
+| Condiciones de salida | RSI < 50 y en descenso, MACD cruza por debajo de su línea de señal, Trailing stop del 2% |
+| Gestión de riesgo | Stop loss del 3%, Tamaño de posición del 2% del capital, Ratio riesgo/recompensa mínimo de 1:2 |
+"""
 
 def generate_strategy_yaml(prompt: str) -> dict:
     """
@@ -110,109 +103,33 @@ def generate_strategy_yaml(prompt: str) -> dict:
     """
     logger.info(f"GENERANDO ESTRATEGIA PARA: {prompt}")
     
-    # Obtener indicadores disponibles
-    available = get_available_indicators()
+    # Aquí se implementaría la lógica para generar la estrategia basada en el prompt
+    # Por ahora, usamos un ejemplo simplificado para Momentum Trading
     
-    # Si no hay indicadores disponibles, usar los predefinidos
-    if not available:
-        available = list(AVAILABLE_INDICATORS.keys())
-    
-    # Seleccionar indicadores apropiados basados en el prompt
-    selected_indicators = []
-    
-    # Análisis simple del prompt para seleccionar indicadores
-    prompt_lower = prompt.lower()
-    
-    # Generar nombre de la estrategia basado en el prompt
-    strategy_name = ""
-    if "momentum" in prompt_lower:
-        selected_indicators.append("Momentum")
-        strategy_name = "Momentum Strategy"
-    
-    if "rsi" in prompt_lower or "fuerza" in prompt_lower or "strength" in prompt_lower:
-        selected_indicators.append("Relative Strength Index")
-        if not strategy_name:
-            strategy_name = "RSI Strategy"
-    
-    if "macd" in prompt_lower or "convergencia" in prompt_lower or "divergencia" in prompt_lower:
-        selected_indicators.append("Moving Average Convergence Divergence")
-        if not strategy_name:
-            strategy_name = "MACD Strategy"
-    
-    if "media" in prompt_lower or "moving" in prompt_lower or "average" in prompt_lower:
-        selected_indicators.append("Moving Average")
-        if not strategy_name:
-            strategy_name = "Moving Average Strategy"
-    
-    if "bollinger" in prompt_lower or "bandas" in prompt_lower:
-        selected_indicators.append("Bollinger Bands")
-        if not strategy_name:
-            strategy_name = "Bollinger Bands Strategy"
-    
-    if "volumen" in prompt_lower or "volume" in prompt_lower:
-        selected_indicators.append("Volume")
-        if not strategy_name:
-            strategy_name = "Volume-Based Strategy"
-    
-    # Si no se seleccionó ningún indicador, incluir algunos por defecto
-    if not selected_indicators:
-        selected_indicators = ["Moving Average", "Relative Strength Index", "Momentum"]
-        strategy_name = "Multi-Indicator Strategy"
-    
-    # Si no se generó un nombre, usar uno genérico con timestamp
-    if not strategy_name:
-        strategy_name = f"Trading Strategy {uuid.uuid4()[:8]}"
-    
-    # Generar descripción basada en los indicadores seleccionados
-    strategy_description = f"Estrategia de trading basada en {', '.join(selected_indicators)}. "
-    strategy_description += f"Generada a partir del prompt: '{prompt}'"
-    
-    # Asegurarse de que solo se incluyan indicadores disponibles
-    selected_indicators = [ind for ind in selected_indicators if ind in available or ind in AVAILABLE_INDICATORS.keys()]
+    strategy_name = "Triple Momentum Strategy"
+    strategy_description = "Estrategia de trading basada en la convergencia de tres indicadores de momentum (RSI, MACD y ADX) para identificar tendencias fuertes y sostenibles."
     
     # Generar el YAML
-    strategy_yaml = f"""indicators:
-{chr(10).join([f"  - {ind} ({AVAILABLE_INDICATORS.get(ind, 'N/A')})" for ind in selected_indicators])}
+    strategy_yaml = """indicators:
+  - RSI (Relative Strength Index)
+  - MACD (Moving Average Convergence Divergence)
+  - ADX (Average Directional Index)
 inputs:
-  - price_close  # Precios de cierre para los indicadores
-  - volume_data  # Volumen opcional para sinergia
-conditions:"""
-
-    # Agregar condiciones específicas para cada indicador
-    if "Momentum" in selected_indicators:
-        strategy_yaml += """
-  momentum:
-    period: 14
-    signal: "MOM > 0 (alcista), MOM < 0 (bajista)" """
-    
-    if "Relative Strength Index" in selected_indicators:
-        strategy_yaml += """
-  rsi:
-    period: 14
-    signal: "50 < RSI < 70 (alcista), 30 < RSI < 50 (bajista)" """
-    
-    if "Moving Average Convergence Divergence" in selected_indicators:
-        strategy_yaml += """
-  macd:
-    settings: [12, 26, 9]
-    signal: "MACD > Signal Line (alcista), MACD < Signal Line (bajista)" """
-    
-    if "Moving Average" in selected_indicators:
-        strategy_yaml += """
-  ma:
-    period: 20
-    signal: "Precio > MA (alcista), Precio < MA (bajista)" """
-    
-    if "Bollinger Bands" in selected_indicators:
-        strategy_yaml += """
-  bollinger:
-    period: 20
-    deviations: 2
-    signal: "Precio cerca de banda superior (sobrecompra), Precio cerca de banda inferior (sobreventa)" """
-    
-    strategy_yaml += """
-correlations:
-  orderFlow: "Confirmar volumen alto en la dirección del movimiento"
+  - price_close
+  - volume_data
+conditions:
+  entry:
+    - RSI > 50 y en aumento
+    - MACD cruza por encima de su línea de señal
+    - ADX > 25
+  exit:
+    - RSI < 50 y en descenso
+    - MACD cruza por debajo de su línea de señal
+    - Trailing stop del 2%
+risk_management:
+  - Stop loss del 3%
+  - Tamaño de posición del 2% del capital
+  - Ratio riesgo/recompensa mínimo de 1:2
 """
     
     logger.info("YAML GENERADO EXITOSAMENTE")
@@ -226,13 +143,26 @@ correlations:
 
 def save_strategy_to_db(strategy_data: dict) -> bool:
     """
-    Guarda una estrategia en la base de datos
+    Guarda una estrategia en la base de datos.
+    Si ya existe una estrategia con el mismo nombre, la reemplaza.
+    Retorna True si se guardó correctamente, False en caso contrario.
     """
     logger.info("="*50)
     logger.info("GUARDANDO ESTRATEGIA")
     logger.info("="*50)
+    
     try:
-        # Preparar los datos
+        # Configurar conexión a la base de datos
+        connection = mysql.connector.connect(
+            host=os.getenv("MYSQL_HOST", "localhost"),
+            user=os.getenv("MYSQL_USER", "root"),
+            password=os.getenv("MYSQL_PASSWORD", ""),
+            database=os.getenv("MYSQL_DATABASE", "sql1")
+        )
+        
+        cursor = connection.cursor()
+        
+        # Crear un diccionario con los datos de la estrategia
         strategy = {
             'uuid': str(uuid.uuid4()),
             'name': strategy_data.get('name', 'Strategy_' + str(uuid.uuid4())[:8]),
@@ -240,25 +170,38 @@ def save_strategy_to_db(strategy_data: dict) -> bool:
             'config_yaml': strategy_data.get('yaml_content', '')
         }
         
-        # Conectar y guardar
-        connection = mysql.connector.connect(**db_config)
-        cursor = connection.cursor()
+        # Verificar si ya existe una estrategia con el mismo nombre
+        check_query = "SELECT id, uuid FROM strategies WHERE name = %s"
+        cursor.execute(check_query, (strategy['name'],))
+        existing = cursor.fetchone()
         
-        insert_query = """
-        INSERT INTO strategies (uuid, name, description, config_yaml)
-        VALUES (%(uuid)s, %(name)s, %(description)s, %(config_yaml)s)
-        """
+        if existing:
+            # Si existe, actualizar en lugar de insertar
+            logger.info(f"ACTUALIZANDO ESTRATEGIA EXISTENTE CON ID: {existing[0]}")
+            update_query = """
+            UPDATE strategies 
+            SET description = %s, config_yaml = %s 
+            WHERE id = %s
+            """
+            cursor.execute(update_query, (strategy['description'], strategy['config_yaml'], existing[0]))
+            strategy['uuid'] = existing[1]  # Mantener el UUID original
+        else:
+            # Si no existe, insertar nueva
+            insert_query = """
+            INSERT INTO strategies (uuid, name, description, config_yaml)
+            VALUES (%s, %s, %s, %s)
+            """
+            cursor.execute(insert_query, (strategy['uuid'], strategy['name'], strategy['description'], strategy['config_yaml']))
         
-        cursor.execute(insert_query, strategy)
         connection.commit()
         
         logger.info(f"ESTRATEGIA GUARDADA CON UUID: {strategy['uuid']}")
-        return True
+        logger.info("ESTRATEGIA GUARDADA EXITOSAMENTE")
         
+        return True
     except Exception as e:
         logger.error(f"ERROR AL GUARDAR ESTRATEGIA: {e}")
         return False
-        
     finally:
         if 'connection' in locals() and connection.is_connected():
             cursor.close()
