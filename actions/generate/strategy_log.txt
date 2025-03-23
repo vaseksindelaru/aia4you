@@ -88,3 +88,94 @@
 2025-03-23 02:46:15,575 - ==================================================
 2025-03-23 02:46:17,860 - ESTRATEGIA GUARDADA CON UUID: 9c58b1e1-d7d4-43c4-a881-1ae78d3b8741
 2025-03-23 02:46:17,860 - ESTRATEGIA GUARDADA EXITOSAMENTE
+2025-03-23 03:52:55,811 - ==================================================
+2025-03-23 03:52:55,828 - GENERANDO ESTRATEGIA PARA PROMPT: crea estrategia bollinger
+2025-03-23 03:52:55,847 - ==================================================
+2025-03-23 03:52:55,847 - GENERANDO ESTRATEGIA PARA: crea estrategia bollinger
+2025-03-23 03:52:55,847 - YAML GENERADO EXITOSAMENTE
+2025-03-23 03:52:55,848 - ESTRATEGIA GENERADA CON ÉXITO
+2025-03-23 04:02:11,344 - ==================================================
+2025-03-23 04:02:11,346 - GENERANDO ESTRATEGIA PARA PROMPT: crea estrategia bollinger
+2025-03-23 04:02:11,357 - ==================================================
+2025-03-23 04:02:11,357 - GENERANDO ESTRATEGIA PARA: crea estrategia bollinger
+2025-03-23 04:02:11,357 - YAML GENERADO EXITOSAMENTE
+2025-03-23 04:02:11,357 - ESTRATEGIA GENERADA CON ÉXITO
+2025-03-23 04:07:25,380 - ==================================================
+2025-03-23 04:07:25,387 - GENERANDO ESTRATEGIA PARA PROMPT: crea estrategia bollinger
+2025-03-23 04:07:25,387 - ==================================================
+2025-03-23 04:07:25,409 - GENERANDO ESTRATEGIA PARA: crea estrategia bollinger
+2025-03-23 04:07:25,409 - YAML GENERADO EXITOSAMENTE
+2025-03-23 04:07:25,409 - ESTRATEGIA GENERADA CON ÉXITO
+2025-03-23 04:13:57,157 - ==================================================
+2025-03-23 04:13:57,158 - GENERANDO ESTRATEGIA PARA PROMPT: crea estrategia bollinger
+2025-03-23 04:13:57,158 - ==================================================
+2025-03-23 04:13:57,158 - GENERANDO ESTRATEGIA PARA: crea estrategia bollinger
+2025-03-23 04:13:57,159 - ESTRATEGIA GENERADA: Bollinger Bands Strategy
+2025-03-23 04:13:57,159 - YAML GENERADO EXITOSAMENTE
+2025-03-23 04:13:57,159 - ESTRATEGIA GENERADA CON ÉXITO
+2025-03-23 04:14:14,283 - ==================================================
+2025-03-23 04:14:14,284 - GUARDANDO ESTRATEGIA
+2025-03-23 04:14:14,284 - ==================================================
+2025-03-23 04:14:16,791 - ESTRATEGIA GUARDADA CON UUID: 2ba6ad76-e59e-46e2-994a-2aebdea1c86c
+2025-03-23 04:14:16,792 - ESTRATEGIA GUARDADA EXITOSAMENTE
+2025-03-23 04:15:10,292 - ==================================================
+2025-03-23 04:15:10,293 - GENERANDO ESTRATEGIA PARA PROMPT: crea estrategia momentum
+2025-03-23 04:15:10,293 - ==================================================
+2025-03-23 04:15:10,293 - GENERANDO ESTRATEGIA PARA: crea estrategia momentum
+2025-03-23 04:15:10,294 - ESTRATEGIA GENERADA: Momentum Strategy
+2025-03-23 04:15:10,294 - YAML GENERADO EXITOSAMENTE
+2025-03-23 04:15:10,294 - ESTRATEGIA GENERADA CON ÉXITO
+2025-03-23 04:16:02,900 - ==================================================
+2025-03-23 04:16:02,901 - GENERANDO ESTRATEGIA PARA PROMPT: crea estrategia order flow
+2025-03-23 04:16:02,901 - ==================================================
+2025-03-23 04:16:02,901 - GENERANDO ESTRATEGIA PARA: crea estrategia order flow
+2025-03-23 04:16:02,901 - ESTRATEGIA GENERADA: Multi-Indicator Trading Strategy
+2025-03-23 04:16:02,902 - YAML GENERADO EXITOSAMENTE
+2025-03-23 04:16:02,902 - ESTRATEGIA GENERADA CON ÉXITO
+2025-03-23 04:16:26,490 - ==================================================
+2025-03-23 04:16:26,491 - GUARDANDO ESTRATEGIA
+2025-03-23 04:16:26,491 - ==================================================
+2025-03-23 04:16:26,668 - ESTRATEGIA GUARDADA CON UUID: ed9b1f61-efa5-405a-8d1a-5fa414d8bc9d
+2025-03-23 04:16:26,668 - ESTRATEGIA GUARDADA EXITOSAMENTE
+2025-03-23 04:25:03,179 - ==================================================
+2025-03-23 04:25:03,180 - GENERANDO ESTRATEGIA PARA PROMPT: crea estrategia spread
+2025-03-23 04:25:03,180 - ==================================================
+2025-03-23 04:25:03,180 - GENERANDO ESTRATEGIA PARA: crea estrategia spread
+2025-03-23 04:25:03,181 - ESTRATEGIA GENERADA: Multi-Indicator Trading Strategy
+2025-03-23 04:25:03,181 - YAML GENERADO EXITOSAMENTE
+2025-03-23 04:25:03,181 - ESTRATEGIA GENERADA CON ÉXITO
+2025-03-23 04:26:37,825 - ==================================================
+2025-03-23 04:26:37,826 - GENERANDO ESTRATEGIA PARA PROMPT: crea estrategia fibonachi
+2025-03-23 04:26:37,827 - ==================================================
+2025-03-23 04:26:37,827 - GENERANDO ESTRATEGIA PARA: crea estrategia fibonachi
+2025-03-23 04:26:37,828 - ESTRATEGIA GENERADA: Multi-Indicator Trading Strategy
+2025-03-23 04:26:37,828 - YAML GENERADO EXITOSAMENTE
+2025-03-23 04:26:37,828 - ESTRATEGIA GENERADA CON ÉXITO
+2025-03-23 04:31:37,024 - ==================================================
+2025-03-23 04:31:37,024 - GENERANDO ESTRATEGIA PARA PROMPT: crea estrategia de trading fibonachi
+2025-03-23 04:31:37,045 - ==================================================
+2025-03-23 04:31:37,045 - GENERANDO ESTRATEGIA PARA: crea estrategia de trading fibonachi
+2025-03-23 04:31:37,045 - ESTRATEGIA GENERADA: Multi-Indicator Trading Strategy
+2025-03-23 04:31:37,046 - YAML GENERADO EXITOSAMENTE
+2025-03-23 04:31:37,046 - ESTRATEGIA GENERADA CON ÉXITO
+2025-03-23 04:32:12,454 - ==================================================
+2025-03-23 04:32:12,455 - GENERANDO ESTRATEGIA PARA PROMPT: crea estrategia de trading  bollinger
+2025-03-23 04:32:12,456 - ==================================================
+2025-03-23 04:32:12,456 - GENERANDO ESTRATEGIA PARA: crea estrategia de trading  bollinger
+2025-03-23 04:32:12,486 - ESTRATEGIA GENERADA: Bollinger Bands Strategy
+2025-03-23 04:32:12,486 - YAML GENERADO EXITOSAMENTE
+2025-03-23 04:32:12,493 - ESTRATEGIA GENERADA CON ÉXITO
+2025-03-23 04:32:34,359 - ==================================================
+2025-03-23 04:32:34,360 - GENERANDO ESTRATEGIA PARA PROMPT: crea estrategia de trading  momentum
+2025-03-23 04:32:34,375 - ==================================================
+2025-03-23 04:32:34,375 - GENERANDO ESTRATEGIA PARA: crea estrategia de trading  momentum
+2025-03-23 04:32:34,376 - ESTRATEGIA GENERADA: Momentum Strategy
+2025-03-23 04:32:34,376 - YAML GENERADO EXITOSAMENTE
+2025-03-23 04:32:34,376 - ESTRATEGIA GENERADA CON ÉXITO
+2025-03-23 04:33:07,678 - ==================================================
+2025-03-23 04:33:07,678 - GENERANDO ESTRATEGIA PARA PROMPT: crea estrategia de trading  rebote a la media
+2025-03-23 04:33:07,678 - ==================================================
+2025-03-23 04:33:07,679 - GENERANDO ESTRATEGIA PARA: crea estrategia de trading  rebote a la media
+2025-03-23 04:33:07,679 - ESTRATEGIA GENERADA: Mean Reversion Strategy
+2025-03-23 04:33:07,679 - YAML GENERADO EXITOSAMENTE
+2025-03-23 04:33:07,679 - ESTRATEGIA GENERADA CON ÉXITO
