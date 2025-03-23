@@ -35,3 +35,31 @@
 2025-03-22 14:39:37,658 - INDICADORES ENCONTRADOS: ['Average Directional Index', 'Bollinger Bands', 'Momentum', 'Moving Average', 'Moving Average Convergence Divergence', 'Relative Strength Index', 'Stochastic Oscillator', 'Volume']
 2025-03-22 14:39:37,659 - YAML GENERADO EXITOSAMENTE
 2025-03-22 14:39:37,659 - ESTRATEGIA GENERADA CON ÉXITO
+2025-03-22 14:41:45,869 - ==================================================
+2025-03-22 14:41:45,869 - GENERANDO ESTRATEGIA PARA PROMPT: crea estrategia momentum trading
+2025-03-22 14:41:45,869 - ==================================================
+2025-03-22 14:41:45,869 - GENERANDO ESTRATEGIA PARA: crea estrategia momentum trading
+2025-03-22 14:41:45,869 - ==================================================
+2025-03-22 14:41:45,869 - BUSCANDO INDICADORES
+2025-03-22 14:41:45,869 - ==================================================
+2025-03-22 14:41:46,070 - INDICADORES ENCONTRADOS: ['Average Directional Index', 'Bollinger Bands', 'Momentum', 'Moving Average', 'Moving Average Convergence Divergence', 'Relative Strength Index', 'Stochastic Oscillator', 'Volume']
+2025-03-22 14:41:46,079 - YAML GENERADO EXITOSAMENTE
+2025-03-22 14:41:46,079 - ESTRATEGIA GENERADA CON ÉXITO
+2025-03-22 14:41:52,601 - ==================================================
+2025-03-22 14:41:52,601 - GUARDANDO ESTRATEGIA
+2025-03-22 14:41:52,601 - ==================================================
+2025-03-22 14:41:52,601 - ==================================================
+2025-03-22 14:41:52,601 - GUARDANDO ESTRATEGIA
+2025-03-22 14:41:52,601 - ==================================================
+2025-03-22 14:41:53,066 - ESTRATEGIA GUARDADA CON UUID: e497d463-01e4-4489-9f0e-b9792efcb006
+2025-03-22 14:41:53,066 - ESTRATEGIA GUARDADA EXITOSAMENTE
+2025-03-22 16:04:40,564 - ==================================================
+2025-03-22 16:04:40,621 - GENERANDO ESTRATEGIA PARA PROMPT: crea estrategia momentum trading
+2025-03-22 16:04:40,621 - ==================================================
+2025-03-22 16:04:40,622 - GENERANDO ESTRATEGIA PARA: crea estrategia momentum trading
+2025-03-22 16:04:40,623 - ==================================================
+2025-03-22 16:04:40,623 - BUSCANDO INDICADORES
+2025-03-22 16:04:40,623 - ==================================================
+2025-03-22 16:04:41,261 - INDICADORES ENCONTRADOS: ['Average Directional Index', 'Bollinger Bands', 'Momentum', 'Moving Average', 'Moving Average Convergence Divergence', 'Relative Strength Index', 'Stochastic Oscillator', 'Volume']
+2025-03-22 16:04:41,480 - YAML GENERADO EXITOSAMENTE
+2025-03-22 16:04:41,481 - ESTRATEGIA GENERADA CON ÉXITO

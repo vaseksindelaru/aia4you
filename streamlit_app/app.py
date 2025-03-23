@@ -14,8 +14,8 @@ prompt = st.text_area("Escribe tu prompt aquí",
                       placeholder="Ejemplo: Crear una nueva estrategia Momentum Trading")
 
 # Inicializar variables de estado de la sesión
-if 'yaml_content' not in st.session_state:
-    st.session_state.yaml_content = None
+if 'strategy_data' not in st.session_state:
+    st.session_state.strategy_data = None
 if 'strategy_saved' not in st.session_state:
     st.session_state.strategy_saved = False
 
@@ -28,7 +28,11 @@ def generate_strategy():
         if response.status_code == 200:
             response_data = response.json()
             if response_data["status"] == "success":
-                st.session_state.yaml_content = response_data["strategy_yaml"]
+                st.session_state.strategy_data = {
+                    "name": response_data["strategy_name"],
+                    "description": response_data["strategy_description"],
+                    "yaml_content": response_data["strategy_yaml"]
+                }
                 return True
         return False
     except Exception as e:
@@ -37,9 +41,9 @@ def generate_strategy():
 
 # Función para guardar estrategia
 def save_strategy():
-    if st.session_state.yaml_content:
+    if st.session_state.strategy_data:
         save_url = f"{API_URL}/save_strategy/"
-        save_response = requests.post(save_url, json={"yaml_content": st.session_state.yaml_content})
+        save_response = requests.post(save_url, json={"strategy_data": st.session_state.strategy_data})
         if save_response.status_code == 200:
             st.session_state.strategy_saved = True
             return True
@@ -52,8 +56,12 @@ if st.button("Enviar"):
             if generate_strategy():
                 st.success("Estrategia generada exitosamente")
                 
+                # Mostrar el nombre y la descripción
+                st.subheader(st.session_state.strategy_data["name"])
+                st.write(st.session_state.strategy_data["description"])
+                
                 # Mostrar el YAML generado
-                st.code(st.session_state.yaml_content, language="yaml")
+                st.code(st.session_state.strategy_data["yaml_content"], language="yaml")
                 
                 # Resetear el estado de guardado
                 st.session_state.strategy_saved = False
@@ -63,7 +71,7 @@ if st.button("Enviar"):
         st.warning("Por favor, escribe un prompt antes de enviar.")
 
 # Botón para guardar la estrategia
-if st.session_state.yaml_content and not st.session_state.strategy_saved:
+if st.session_state.strategy_data and not st.session_state.strategy_saved:
     if st.button("Guardar estrategia en la base de datos"):
         with st.spinner("Guardando estrategia..."):
             if save_strategy():
