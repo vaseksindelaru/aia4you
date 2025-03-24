@@ -22,6 +22,8 @@ with tab1:
         st.session_state.strategy_saved = False
     if 'last_strategy_prompt' not in st.session_state:
         st.session_state.last_strategy_prompt = ""
+    if 'strategy_uuid' not in st.session_state:
+        st.session_state.strategy_uuid = None
 
     # Área de texto para escribir el prompt
     strategy_prompt = st.text_area("Escribe tu prompt aquí", 
@@ -42,14 +44,18 @@ with tab1:
             if response.status_code == 200:
                 response_data = response.json()
                 if response_data["status"] == "success":
+                    # Manejar tanto strategy_yaml como config_yaml para compatibilidad
+                    yaml_content = response_data.get("strategy_yaml") or response_data.get("config_yaml", "")
+                    
                     st.session_state.strategy_data = {
                         "name": response_data["strategy_name"],
                         "description": response_data["strategy_description"],
-                        "yaml_content": response_data["strategy_yaml"]
+                        "config_yaml": yaml_content
                     }
                     st.session_state.last_strategy_prompt = user_prompt
                     # Resetear el estado de guardado cuando se genera una nueva estrategia
                     st.session_state.strategy_saved = False
+                    st.session_state.strategy_uuid = None
                     return True
             st.error(f"Error en la respuesta: {response.text}")
             return False
@@ -60,11 +66,33 @@ with tab1:
     # Función para guardar estrategia
     def save_strategy():
         if st.session_state.strategy_data:
+            # Mostrar los datos que se van a enviar para depuración
+            st.write("Datos de la estrategia que se enviarán:")
+            st.json(st.session_state.strategy_data)
+            
             save_url = f"{STRATEGY_API_URL}/save_strategy/"
             save_response = requests.post(save_url, json={"strategy_data": st.session_state.strategy_data})
+            
+            # Mostrar la respuesta completa para depuración
+            st.write(f"Respuesta del servidor (código: {save_response.status_code}):")
+            try:
+                st.json(save_response.json())
+            except:
+                st.write(save_response.text)
+                
             if save_response.status_code == 200:
-                st.session_state.strategy_saved = True
-                return True
+                save_result = save_response.json()
+                if save_result["status"] == "success":
+                    st.session_state.strategy_saved = True
+                    # Intentar obtener el UUID de la estrategia guardada
+                    if "uuid" in save_result:
+                        st.session_state.strategy_uuid = save_result["uuid"]
+                        st.success(f"Estrategia guardada con UUID: {st.session_state.strategy_uuid}")
+                    else:
+                        st.warning("La estrategia se guardó pero no se recibió un UUID")
+                    return True
+            st.error(f"Error al guardar: {save_response.text}")
+            return False
         return False
 
     # Botón para enviar el prompt
@@ -79,7 +107,7 @@ with tab1:
                     st.write(st.session_state.strategy_data["description"])
                     
                     # Mostrar el YAML generado
-                    st.code(st.session_state.strategy_data["yaml_content"], language="yaml")
+                    st.code(st.session_state.strategy_data["config_yaml"], language="yaml")
                 else:
                     st.error("Error al generar la estrategia")
         else:
@@ -95,6 +123,8 @@ with tab1:
                     st.error("Error al guardar la estrategia")
     elif st.session_state.strategy_saved:
         st.success("La estrategia ya ha sido guardada en la base de datos")
+        if st.session_state.strategy_uuid:
+            st.info(f"UUID de la estrategia: {st.session_state.strategy_uuid}")
 
 with tab2:
     # Título de la interfaz

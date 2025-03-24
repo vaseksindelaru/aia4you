@@ -361,15 +361,18 @@ risk_management:
         "yaml_content": strategy_yaml
     }
 
-def save_strategy_to_db(strategy_data: dict) -> bool:
+def save_strategy_to_db(strategy_data: dict) -> tuple:
     """
     Guarda una estrategia en la base de datos.
     Si ya existe una estrategia con el mismo nombre, la reemplaza.
-    Retorna True si se guardó correctamente, False en caso contrario.
+    Retorna una tupla (bool, str) con el éxito de la operación y el UUID de la estrategia.
     """
     logger.info("="*50)
     logger.info("GUARDANDO ESTRATEGIA")
     logger.info("="*50)
+    
+    # Log de los datos recibidos para depuración
+    logger.info(f"DATOS RECIBIDOS: {strategy_data}")
     
     try:
         # Configurar conexión a la base de datos
@@ -387,8 +390,11 @@ def save_strategy_to_db(strategy_data: dict) -> bool:
             'uuid': str(uuid.uuid4()),
             'name': strategy_data.get('name', 'Strategy_' + str(uuid.uuid4())[:8]),
             'description': strategy_data.get('description', 'Estrategia generada automáticamente'),
-            'config_yaml': strategy_data.get('yaml_content', '')
+            'config_yaml': strategy_data.get('config_yaml', '')
         }
+        
+        # Log de la estrategia formateada para depuración
+        logger.info(f"ESTRATEGIA FORMATEADA: {strategy}")
         
         # Verificar si ya existe una estrategia con el mismo nombre
         check_query = "SELECT id, uuid FROM strategies WHERE name = %s"
@@ -407,21 +413,36 @@ def save_strategy_to_db(strategy_data: dict) -> bool:
             strategy['uuid'] = existing[1]  # Mantener el UUID original
         else:
             # Si no existe, insertar nueva
+            logger.info("INSERTANDO NUEVA ESTRATEGIA")
             insert_query = """
             INSERT INTO strategies (uuid, name, description, config_yaml)
             VALUES (%s, %s, %s, %s)
             """
+            logger.info(f"VALORES A INSERTAR: {strategy['uuid']}, {strategy['name']}, {strategy['description']}, {len(strategy['config_yaml'])} bytes")
             cursor.execute(insert_query, (strategy['uuid'], strategy['name'], strategy['description'], strategy['config_yaml']))
         
         connection.commit()
         
+        # Verificar si la estrategia se guardó correctamente
+        verify_query = "SELECT id FROM strategies WHERE uuid = %s"
+        cursor.execute(verify_query, (strategy['uuid'],))
+        verify_result = cursor.fetchone()
+        
+        if verify_result:
+            logger.info(f"VERIFICACIÓN: Estrategia encontrada con ID {verify_result[0]}")
+        else:
+            logger.warning("VERIFICACIÓN: No se encontró la estrategia en la base de datos después de guardar")
+        
         logger.info(f"ESTRATEGIA GUARDADA CON UUID: {strategy['uuid']}")
         logger.info("ESTRATEGIA GUARDADA EXITOSAMENTE")
         
-        return True
+        return True, strategy['uuid']
     except Exception as e:
         logger.error(f"ERROR AL GUARDAR ESTRATEGIA: {e}")
-        return False
+        # Log del traceback completo para depuración
+        import traceback
+        logger.error(f"TRACEBACK: {traceback.format_exc()}")
+        return False, None
     finally:
         if 'connection' in locals() and connection.is_connected():
             cursor.close()
@@ -618,7 +639,8 @@ def generate_strategy(request: StrategyRequest):
             "status": "success",
             "strategy_name": strategy_data["name"],
             "strategy_description": strategy_data["description"],
-            "strategy_yaml": strategy_data["yaml_content"],
+            "strategy_yaml": strategy_data["yaml_content"],  # Mantener para compatibilidad
+            "config_yaml": strategy_data["yaml_content"],    # Nuevo nombre para consistencia
             "generated_indicators": generated_indicators
         }
     except Exception as e:
@@ -629,11 +651,27 @@ def generate_strategy(request: StrategyRequest):
 def save_strategy(request: SaveStrategyRequest):
     """Endpoint para guardar una estrategia en la base de datos"""
     try:
+        logger.info("="*50)
+        logger.info("GUARDANDO ESTRATEGIA")
+        logger.info("="*50)
+        
         # Guardar la estrategia
-        if save_strategy_to_db(request.strategy_data):
-            return {"status": "success", "message": "Estrategia guardada correctamente"}
+        result, strategy_uuid = save_strategy_to_db(request.strategy_data)
+        
+        if result:
+            return {
+                "status": "success", 
+                "message": "Estrategia guardada correctamente",
+                "uuid": strategy_uuid
+            }
         else:
             raise HTTPException(status_code=500, detail="Error al guardar la estrategia")
     except Exception as e:
         logger.error(f"ERROR AL GUARDAR ESTRATEGIA: {e}")
         raise HTTPException(status_code=500, detail=f"Error al guardar la estrategia: {str(e)}")
+
+# Iniciar el servidor si este archivo se ejecuta directamente
+if __name__ == "__main__":
+    import uvicorn
+    print("Iniciando servidor de generación de estrategias en el puerto 8505...")
+    uvicorn.run(app, host="0.0.0.0", port=8505)
