@@ -6,6 +6,7 @@ from apis.routes.detect_reboundRoute import router as detect_rebound_router
 from apis.routes.gbRoute import router as gb_router
 from apis.routes.vwapRoute import router as vwap_router
 from apis.routes.gridCandleReboundRoute import router as gridCandleRebound_router
+from actions.run.signal_runner import SignalRunner
 
 app = FastAPI()
 
@@ -15,3 +16,9 @@ app.include_router(detect_rebound_router)
 app.include_router(gb_router)
 app.include_router(cluster_router)
 app.include_router(gridCandleRebound_router)
+
+@app.get("/run")
+def run_trading():
+    runner = SignalRunner()
+    action = runner.run()
+    return {"action": action}

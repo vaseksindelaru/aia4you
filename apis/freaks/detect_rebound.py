@@ -1,18 +1,27 @@
-# detect_rebound.py
 import pandas as pd
 
-def evaluar_rebote(data, index, siguientes_window=2):
-    df = pd.DataFrame(data)
-    vela_i = df.iloc[index]
-    promedio_precio = (vela_i['high'] + vela_i['low']) / 2
-    for i in range(index + 2, len(df)):
-        vela_actual = df.iloc[i]
-        if vela_actual['low'] <= promedio_precio <= vela_actual['high']:
-            promedio_intermedias = df['close'].iloc[index + 1:i].mean()
-            promedio_siguientes = df['close'].iloc[i + 1:i + 1 + siguientes_window].mean()
-            if (promedio_intermedias < promedio_precio and promedio_siguientes < promedio_precio) or \
-               (promedio_intermedias > promedio_precio and promedio_siguientes > promedio_precio):
-                return 1
-            else:
-                return 0
-    return 0
+class ReboteDetector:
+    def __init__(self, db_manager, config_loader, detection_strategy):
+        self.db = db_manager
+        self.config = config_loader.get_detection_params()
+        self.strategy = detection_strategy
+
+    def find_zones(self, df):
+        df_filtered = self.strategy.find_zones(df)
+        self.db.save_data(df_filtered)
+        return df_filtered
+
+    def confirm_rebote(self, df, index):
+        intermedias_window = self.config["intermedias_window"]
+        vela_i = df.iloc[index]
+        promedio_precio = (vela_i['high'] + vela_i['low']) / 2
+        direccion = 'alcista' if vela_i['close'] > vela_i['open'] else 'bajista'
+
+        for i in range(index + intermedias_window + 1, len(df)):
+            vela_actual = df.iloc[i]
+            if vela_actual['low'] <= promedio_precio <= vela_actual['high']:
+                if direccion == 'alcista' and vela_actual['close'] > promedio_precio:
+                    return i
+                elif direccion == 'bajista' and vela_actual['close'] < promedio_precio:
+                    return i
+        return None

@@ -1,0 +1,6 @@
+detection:
+  volume_sma_window: 5
+  height_sma_window: 5
+  intermedias_window: 1
+evaluation:
+  siguientes_window: 2
