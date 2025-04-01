@@ -1,0 +1,95 @@
+ESTRUCTURA DE ÁRBOL DEL PROYECTO AIA4YOU
+=======================================
+
+📁 AIA4YOU/
+│
+├── 📄 .env                      # Variables de entorno
+├── 📄 .gitignore                # Archivos ignorados por git
+├── 📄 api.log                   # Registro de la API
+├── 📄 indicator_log.txt         # Registro del generador de indicadores
+├── 📄 main.py                   # Punto de entrada principal (FastAPI)
+├── 📄 README.md                 # Documentación del proyecto
+├── 📄 strategy_log.txt          # Registro del generador de estrategias
+│
+├── 📁 actions/                  # Acciones del sistema
+│   ├── 📁 analyze/              # Análisis de datos y estrategias
+│   │
+│   ├── 📁 check/                # Verificación de componentes
+│   │   ├── 📄 check_indicators.py           # Verificación de indicadores
+│   │   ├── 📄 check_indicators_detail.py    # Verificación detallada de indicadores
+│   │   ├── 📄 fuzzy_check.py                # Comparación de similitud de cadenas
+│   │   ├── 📄 test_apis.py                  # Pruebas de APIs
+│   │   ├── 📄 test_indicator_generation.py  # Pruebas de generación de indicadores
+│   │   ├── 📄 test_indicator_integration.py # Pruebas de integración de indicadores
+│   │   └── 📄 test_strategy_with_indicators.py # Pruebas de estrategias con indicadores
+│   │
+│   ├── 📁 delete/               # Eliminación de componentes
+│   │   ├── 📄 delete_indicators.py          # Eliminación de indicadores
+│   │   └── 📄 delete_strategies.py          # Eliminación de estrategias
+│   │
+│   ├── 📁 generate/             # Generación de componentes
+│   │   ├── 📄 indicator_generator.py        # Generador de indicadores (FastAPI)
+│   │   ├── 📄 indicator_log.txt             # Registro de generación de indicadores
+│   │   ├── 📄 monitor_log.py                # Monitoreo de registros
+│   │   ├── 📄 README.md                     # Documentación del generador
+│   │   ├── 📄 strategy_generator.py         # Generador de estrategias (FastAPI)
+│   │   └── 📄 strategy_log.txt              # Registro de generación de estrategias
+│   │
+│   ├── 📁 run/                  # Ejecución de componentes
+│   │   └── 📄 signal_runner.py              # Ejecutor de señales
+│   │
+│   └── 📁 update/               # Actualización de componentes
+│       └── 📄 update_indicators.py          # Actualización de indicadores
+│
+├── 📁 apis/                     # Implementaciones de APIs
+│   ├── 📄 cluster.py                        # API de clustering
+│   ├── 📄 gb.py                             # API de gradient boosting
+│   ├── 📄 gridCandleRebound.py              # API de rebote de velas en grid
+│   ├── 📄 vwap.py                           # API de VWAP (Volume Weighted Average Price)
+│   ├── 📄 __init__.py                       # Inicializador del paquete
+│   │
+│   ├── 📁 freaks/               # Detectores de patrones especiales
+│   │   ├── 📄 detect_candle.py              # Detector de patrones de velas
+│   │   └── 📄 detect_rebound.py             # Detector de rebotes
+│   │
+│   ├── 📁 indicators/           # Implementaciones de indicadores
+│   │   ├── 📁 momentum/         # Indicador de momentum
+│   │   │   ├── 📄 config.yaml               # Configuración del indicador
+│   │   │   └── 📄 momentum_indicator.py     # Implementación del indicador
+│   │   │
+│   │   └── 📁 rsi/              # Indicador RSI
+│   │       ├── 📄 config.yaml               # Configuración del indicador
+│   │       ├── 📄 rsi_indicator.py          # Implementación del indicador
+│   │       ├── 📄 rsi_test_results.png      # Resultados de pruebas visuales
+│   │       ├── 📄 test_rsi.py               # Pruebas del indicador
+│   │       └── 📄 __init__.py               # Inicializador del paquete
+│   │
+│   └── 📁 strategies/           # Implementaciones de estrategias
+│       ├── 📁 momentum/         # Estrategias de momentum
+│       ├── 📁 orderFlow/        # Estrategias de flujo de órdenes
+│       └── 📁 rebound/          # Estrategias de rebote
+│
+├── 📁 core/                     # Módulos centrales
+│   ├── 📄 clusters.py                       # Análisis de clustering
+│   ├── 📄 data_fetcher.py                   # Obtención de datos
+│   ├── 📄 db_manager.py                     # Gestión de base de datos
+│   ├── 📄 networkx.py                       # Análisis de redes
+│   ├── 📄 trading_simulator.py              # Simulador de trading
+│   └── 📄 __init__.py                       # Inicializador del paquete
+│
+├── 📁 data/                     # Datos y modelos
+│   ├── 📄 BTCUSDT-trades-2025-03-23.csv     # Datos de ejemplo
+│   │
+│   └── 📁 models/               # Modelos de datos
+│       └── 📁 strategies/       # Modelos de estrategias
+│           ├── 📄 check_strategies.py       # Verificación de estrategias
+│           ├── 📄 insert_strategy.py        # Inserción de estrategias
+│           ├── 📄 setup_database.py         # Configuración de base de datos
+│           ├── 📄 setup_indicators.sql      # SQL para tabla de indicadores
+│           ├── 📄 setup_strategies.sql      # SQL para tabla de estrategias
+│           ├── 📄 strategies.sql            # SQL para operaciones de estrategias
+│           ├── 📄 update_indicators_table.sql # SQL para actualizar tabla de indicadores
+│           └── 📄 verify_strategy.py        # Verificación de estrategias
+│
+└── 📁 streamlit_app/            # Aplicación Streamlit (Frontend)
+    └── 📄 app.py                            # Aplicación Streamlit
