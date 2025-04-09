@@ -1,0 +1,16 @@
+{
+    "timestamp": "2025-04-09 19:08:00",
+    "data_file": "BTCUSDC-5m-2025-04-08.csv",
+    "data_rows": 287,
+    "detection": {
+        "key_candles_count": 16,
+        "key_candles_percentage": 5.992509363295881
+    },
+    "range": {
+        "ranges_calculated": 16
+    },
+    "breakout": {
+        "valid_breakouts": 4,
+        "breakout_percentage": 25.0
+    }
+}

@@ -1,17 +1,22 @@
 # main.py
 from fastapi import FastAPI
-from apis.routes.clusterRoute import router as cluster_router
-from apis.routes.detect_candleRoute import router as detect_candle_router
-from apis.routes.detect_reboundRoute import router as detect_rebound_router
-from apis.routes.gbRoute import router as gb_router
-from apis.routes.vwapRoute import router as vwap_router
-from apis.routes.gridCandleReboundRoute import router as gridCandleRebound_router
+from fastapi.middleware.cors import CORSMiddleware
+import importlib.util
+import os
+
+# Importar indicadores
+from apis.indicators import router as indicators_router
 
 app = FastAPI()
 
-app.include_router(vwap_router)
-app.include_router(detect_candle_router)
-app.include_router(detect_rebound_router)
-app.include_router(gb_router)
-app.include_router(cluster_router)
-app.include_router(gridCandleRebound_router)
+# Configurar CORS
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
+
+# Incluir solo el router de indicadores que sabemos que existe
+app.include_router(indicators_router, prefix="/indicators")

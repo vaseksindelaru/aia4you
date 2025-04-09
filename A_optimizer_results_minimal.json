@@ -1,0 +1,42 @@
+{
+    "timestamp": "2025-04-09 20:06:30",
+    "data_rows": 287,
+    "detection": {
+        "params": {
+            "volume_percentile_threshold": 80,
+            "body_percentage_threshold": 30,
+            "lookback_candles": 20
+        },
+        "key_candles_count": 16,
+        "key_candles_percentage": 5.992509363295881
+    },
+    "range": {
+        "params": {
+            "atr_period": 14,
+            "atr_multiplier": 1.5
+        },
+        "ranges_calculated": 16
+    },
+    "breakout": {
+        "params": {
+            "breakout_threshold_percentage": 0.5,
+            "max_candles_to_return": 3
+        },
+        "valid_breakouts": 2,
+        "breakout_percentage": 12.5,
+        "breakouts": [
+            {
+                "range_index": 170,
+                "breakout_index": 172,
+                "direction": "bearish",
+                "percentage": 0.68873452813508
+            },
+            {
+                "range_index": 203,
+                "breakout_index": 205,
+                "direction": "bearish",
+                "percentage": 0.5552946041201559
+            }
+        ]
+    }
+}
