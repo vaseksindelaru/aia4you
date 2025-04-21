@@ -1,7 +1,6 @@
 """
 detect.py - Shakeout Strategy Detection Module
 
-This module provides functionality to detect key candles for the Shakeout strategy.
 Key candles are identified by high volume and small body, which often indicate
 potential market reversals or continuation patterns.
 """
